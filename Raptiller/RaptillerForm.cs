@@ -1,0 +1,166 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows;
+using System.Windows.Input;
+using System.Threading;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+namespace Raptiller
+{
+    public partial class RaptillerForm : Form
+    {
+        private const int WH_KEYBOARD_LL = 13;
+        private const int WM_KEYDOWN = 0x0100;
+        private const int WM_KEYUP = 0x0101;
+        private const int WM_SYSKEYDOWN = 0x0104;
+        private const int WM_SYSKEYUP = 0x0105;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+
+        public event EventHandler<KeyPressArgs> OnKeyPressed;
+
+        private LowLevelKeyboardProc _proc;
+        private IntPtr _hookID = IntPtr.Zero;        
+
+        private KeyboardHook hook;
+        public RaptillerForm()
+        {
+            InitializeComponent();
+
+            MakeThisApplicationDeamon();
+
+            this.Activated += new EventHandler(Form_Activated);
+
+            //hook = new KeyboardHook((int)KeyboardHook.Modifiers.None, Keys.A, this);
+
+            //hook.Register(); // registering globally that A will call a method
+
+            _proc = HookCallback;
+                        
+            
+            OnKeyPressed += _listener_OnKeyPressed;
+            HookKeyboard();
+        }
+
+        ~RaptillerForm()
+        {
+            hook.Unregister();
+        }
+
+        private void Exit_Click(object sender, EventArgs e)
+        {            
+            Application.Exit();
+        }
+
+        private void Form_Activated(object sender, EventArgs e)
+        {
+            this.Hide();
+        }
+
+        private void MakeThisApplicationDeamon()
+        {
+            ShowInTaskbar = false;
+
+            var menuItem = new ToolStripMenuItem();
+            menuItem.Text = "&Exit";
+            menuItem.Click += new EventHandler(Exit_Click);
+
+            var menu = new ContextMenuStrip();
+            menu.Items.Add(menuItem);
+
+            var icon = new NotifyIcon();
+            icon.Icon = new Icon("frog.ico");
+            icon.Visible = true;
+            icon.Text = "Raptiller";
+            icon.ContextMenuStrip = menu;
+        }
+
+        //protected override void WndProc(ref Message m)
+        //{
+        //    if (m.Msg == 0x0312)
+        //    {
+        //        HandleHotkey();
+        //        int id = m.WParam.ToInt32();
+        //        Console.WriteLine(string.Format("Hotkey #{0} pressed", id));
+        //    }
+        //    base.WndProc(ref m);
+        //}
+
+        //private void HandleHotkey()
+        //{
+        //    KeyboardManager.PressKey(Keys.Q);
+        //}
+
+        public void HookKeyboard()
+        {
+            _hookID = SetHook(_proc);
+        }
+
+        public void UnHookKeyboard()
+        {
+            UnhookWindowsHookEx(_hookID);
+        }
+
+        private IntPtr SetHook(LowLevelKeyboardProc proc)
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule)
+            {
+                return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
+            }
+        }
+
+        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
+
+                if (OnKeyPressed != null) 
+                { 
+                    OnKeyPressed(this, new KeyPressArgs(KeyInterop.KeyFromVirtualKey(vkCode))); 
+                }
+            }
+
+            //if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+            //{
+            //    int vkCode = Marshal.ReadInt32(lParam);
+
+            //    if (OnKeyPressed != null)
+            //    {
+            //        OnKeyPressed(this, new KeyPressArgs(KeyInterop.KeyFromVirtualKey(vkCode)));
+            //    }
+            //}
+
+            return CallNextHookEx(_hookID, nCode, wParam, lParam);
+        }
+
+        void _listener_OnKeyPressed(object sender, KeyPressArgs e)
+        {
+            Console.WriteLine(e.Key.ToString());
+            //this.textBox_DisplayKeyboardInput.Text += e.KeyPressed.ToString();
+            KeyboardManager.PressKey(Keys.Q);
+        }
+    }
+}
