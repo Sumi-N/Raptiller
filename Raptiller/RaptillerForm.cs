@@ -41,9 +41,8 @@ namespace Raptiller
         public event EventHandler<KeyPressArgs> OnKeyPressed;
 
         private LowLevelKeyboardProc _proc;
-        private IntPtr _hookID = IntPtr.Zero;        
+        private IntPtr _hookID = IntPtr.Zero;
 
-        private KeyboardHook hook;
         public RaptillerForm()
         {
             InitializeComponent();
@@ -52,20 +51,16 @@ namespace Raptiller
 
             this.Activated += new EventHandler(Form_Activated);
 
-            //hook = new KeyboardHook((int)KeyboardHook.Modifiers.None, Keys.A, this);
-
-            //hook.Register(); // registering globally that A will call a method
-
             _proc = HookCallback;
                         
             
             OnKeyPressed += _listener_OnKeyPressed;
-            HookKeyboard();
+            HookKeyboard();            
         }
 
         ~RaptillerForm()
         {
-            hook.Unregister();
+            
         }
 
         private void Exit_Click(object sender, EventArgs e)
@@ -137,21 +132,23 @@ namespace Raptiller
             {
                 int vkCode = Marshal.ReadInt32(lParam);
 
-                if (OnKeyPressed != null) 
-                { 
-                    OnKeyPressed(this, new KeyPressArgs(KeyInterop.KeyFromVirtualKey(vkCode))); 
+                if (OnKeyPressed != null)
+                {
+                    OnKeyPressed(this, new KeyPressArgs(KeyInterop.KeyFromVirtualKey(vkCode)));
                 }
+
+
+                return CallNextHookEx((System.IntPtr)1, nCode, (System.IntPtr)1, (System.IntPtr)1);
+                //return (System.IntPtr)1;
             }
 
-            //if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
-            //{
-            //    int vkCode = Marshal.ReadInt32(lParam);
+            if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+            {
+                int vkCode = Marshal.ReadInt32(lParam);
 
-            //    if (OnKeyPressed != null)
-            //    {
-            //        OnKeyPressed(this, new KeyPressArgs(KeyInterop.KeyFromVirtualKey(vkCode)));
-            //    }
-            //}
+                return CallNextHookEx((System.IntPtr)1, nCode, (System.IntPtr)1, (System.IntPtr)1);
+                //return (System.IntPtr)1;
+            }
 
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
@@ -160,7 +157,7 @@ namespace Raptiller
         {
             Console.WriteLine(e.Key.ToString());
             //this.textBox_DisplayKeyboardInput.Text += e.KeyPressed.ToString();
-            KeyboardManager.PressKey(Keys.Q);
+            //KeyboardManager.PressKey(Keys.Q);
         }
     }
 }
