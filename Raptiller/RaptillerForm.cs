@@ -138,27 +138,32 @@ namespace Raptiller
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             tagKBDLLHOOKSTRUCT keyStruct = (tagKBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(tagKBDLLHOOKSTRUCT));
+            var isInjected = 0x01 & (keyStruct.flags >> 4);
 
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
             {
-                //if (keyStruct.vkCode != 162)
+                if (isInjected == 0)
                 {
                     KeyboardManager.HoldKey((Keys)keyStruct.vkCode);
-                    Debug.WriteLine("hello");
-                    //KeyboardManager.TestInput();
                     return (System.IntPtr)1;
+                }
+                else
+                {
+
                 }
             }
 
-            //if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
-            //{
-            //    //if (keyStruct.vkCode != 162)
-            //    {
-            //        KeyboardManager.ReleaseKey((Keys)keyStruct.vkCode);
-            //        //KeyboardManager.TestInput();
-            //        return (System.IntPtr)1;
-            //    }
-            //}
+            if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
+            {
+                if (isInjected == 0)
+                {
+                    KeyboardManager.ReleaseKey((Keys)keyStruct.vkCode);
+                    return (System.IntPtr)1;
+                }
+                else
+                {
+                }
+            }
 
             return CallNextHookEx(_hookID, nCode, wParam, lParam);
         }
