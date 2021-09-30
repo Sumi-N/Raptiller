@@ -109,6 +109,39 @@ public class KeyboardManager
         SendInput(1, ref input, Marshal.SizeOf(input));
     }
 
+    public static void TestInput()
+    {
+        {
+            INPUT input = new INPUT();
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = 164;
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
+
+        {
+            INPUT input = new INPUT();
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = 9;
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
+
+        {
+            INPUT input = new INPUT();
+            input.type = INPUT_KEYBOARD;
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            input.ki.wVk = 9;
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
+
+        {
+            INPUT input = new INPUT();
+            input.type = INPUT_KEYBOARD;
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            input.ki.wVk = 164;
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
+    }
+
     public static void PressKey(Keys vk)
     {
         HoldKey(vk);
