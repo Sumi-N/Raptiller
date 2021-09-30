@@ -12,9 +12,10 @@ namespace Raptiller
 
         public static void Initialize()
         {
-            InputStates = Enum.GetValues(typeof(Keys))
-                           .Cast<Keys>()
-                           .ToDictionary(t => (Keys)t, t => (bool)t);
+            for( int i = 0; i < 256; i++)
+            {
+                InputStates.Add((Keys)i, false);
+            }
 
             Console.WriteLine(String.Join(Environment.NewLine, InputStates));
         }
@@ -25,17 +26,20 @@ namespace Raptiller
 
             if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
             {
-                //Input.PressKey((Keys)keyStruct.vkCode);
+                InputStates[(Keys)keyStruct.vkCode] = true;
             }
 
             if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
             {
-                //Input.ReleaseKey((Keys)keyStruct.vkCode);
+                InputStates[(Keys)keyStruct.vkCode] = false;
             }
 
-            if ()
+            if (InputStates[Keys.LShiftKey])
             {
-
+                if((Keys)keyStruct.vkCode == Keys.B)
+                {
+                    Input.PressKey(Keys.U);
+                }
             }
             else
             {

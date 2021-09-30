@@ -41,6 +41,8 @@ namespace Raptiller
             this.Activated += new EventHandler(Form_Activated);
 
             inputReceiver = new InputReceiver();
+
+            InputModifier.Initialize();
         }
 
         private void Exit_Click(object sender, EventArgs e)
