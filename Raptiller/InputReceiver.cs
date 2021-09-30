@@ -3,26 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Raptiller
 {
-    public struct KBDLLHOOKSTRUCT
-    {
-        public Int32 vkCode;
-        public Int32 scanCode;
-        public Int32 flags;
-        public Int32 time;
-        IntPtr dwExtraInfo;
-    }
-
     class InputReceiver
     {
-        public  const int WM_KEYDOWN = 0x0100;
-        public const int WM_KEYUP = 0x0101;
-        public const int WM_SYSKEYDOWN = 0x0104;
-        public const int WM_SYSKEYUP = 0x0105;
+        private struct KBDLLHOOKSTRUCT
+        {
+            public Int32 vkCode;
+            public Int32 scanCode;
+            public Int32 flags;
+            public Int32 time;
+            IntPtr dwExtraInfo;
+        }
+
+        private const int WM_KEYDOWN = 0x0100;
+        private const int WM_KEYUP = 0x0101;
+        private const int WM_SYSKEYDOWN = 0x0104;
+        private const int WM_SYSKEYUP = 0x0105;
 
         private const int WH_KEYBOARD_LL = 13;
         private const int LLKHF_INJECTED = 0x00000010;
@@ -75,24 +76,33 @@ namespace Raptiller
 
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));            
+            KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
 
             if (nCode >= 0)
             {
-                if (keyStruct.flags != LLKHF_INJECTED)
-                {                    
+                if ((keyStruct.flags & LLKHF_INJECTED) == 0)
+                {
                     if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
                     {
-                        InputModifier.SendKey(keyStruct.vkCode, true);
+                        InputModifier.SendKey(keyStruct.vkCode, keyStruct.scanCode, keyStruct.flags, true);
                     }
-                    else if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
+
+                    if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
                     {
-                        InputModifier.SendKey(keyStruct.vkCode, false);
+                        InputModifier.SendKey(keyStruct.vkCode, keyStruct.scanCode, keyStruct.flags, false);
                     }
                     return (System.IntPtr)1;
                 }
             }
 
+            if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
+            {
+                Debug.WriteLine(((Keys)keyStruct.vkCode).ToString() + " is pressed");
+            }
+            else if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
+            {
+                Debug.WriteLine(((Keys)keyStruct.vkCode).ToString() + " is released");
+            }
             return CallNextHookEx(hookID, nCode, wParam, lParam);
         }
     }

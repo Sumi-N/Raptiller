@@ -33,7 +33,7 @@ namespace Raptiller
             menu.Items.Add(menuItem);
 
             var icon = new NotifyIcon();
-            icon.Icon = new Icon("frog.ico");
+            //icon.Icon = new Icon("frog.ico");
             icon.Visible = true;
             icon.Text = "Raptiller";
             icon.ContextMenuStrip = menu;
@@ -41,8 +41,6 @@ namespace Raptiller
             this.Activated += new EventHandler(Form_Activated);
 
             inputReceiver = new InputReceiver();
-
-            InputModifier.Initialize();
         }
 
         private void Exit_Click(object sender, EventArgs e)
