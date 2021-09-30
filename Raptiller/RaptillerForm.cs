@@ -32,8 +32,10 @@ namespace Raptiller
             var menu = new ContextMenuStrip();
             menu.Items.Add(menuItem);
 
+            this.Icon = Properties.Resources.frog;
+
             var icon = new NotifyIcon();
-            //icon.Icon = new Icon("frog.ico");
+            icon.Icon = Properties.Resources.frog;
             icon.Visible = true;
             icon.Text = "Raptiller";
             icon.ContextMenuStrip = menu;
