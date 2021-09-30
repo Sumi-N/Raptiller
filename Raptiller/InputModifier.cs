@@ -9,6 +9,7 @@ namespace Raptiller
     class InputModifier
     {
         private static Dictionary<Keys, bool> InputStates = new Dictionary<Keys, bool>();
+        private static Keys CurrentKey;
 
         public static void Initialize()
         {
@@ -20,38 +21,57 @@ namespace Raptiller
             Console.WriteLine(String.Join(Environment.NewLine, InputStates));
         }
 
-        public static void SendKey(IntPtr wParam, IntPtr lParam)
-        {
-            KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
-
-            if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
-            {
-                InputStates[(Keys)keyStruct.vkCode] = true;
-            }
-
-            if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
-            {
-                InputStates[(Keys)keyStruct.vkCode] = false;
-            }
+        public static void SendKey(int vk, bool isPress)
+        {            
+            CurrentKey = (Keys)vk;
+            
+            InputStates[CurrentKey] = isPress;
 
             if (InputStates[Keys.LShiftKey])
             {
-                if((Keys)keyStruct.vkCode == Keys.B)
+                switch (CurrentKey)
                 {
-                    Input.PressKey(Keys.U);
-                }
+                    case Keys.B:
+                        Input.SendKey(Keys.Left, isPress);
+                        break;
+
+                    case Keys.F:
+                        Input.SendKey(Keys.Right, isPress);
+                        break;
+
+                    case Keys.P:
+                        Input.SendKey(Keys.Up, isPress);
+                        break;
+
+                    case Keys.N:
+                        Input.SendKey(Keys.Down, isPress);
+                        break;
+
+                    case Keys.D:
+                        Input.SendKey(Keys.Delete, isPress);
+                        break;
+
+                    case Keys.H:
+                        Input.SendKey(Keys.Back, isPress);
+                        break;
+
+                    case Keys.E:
+                        Input.SendKey(Keys.End, isPress);
+                        break;
+
+                    case Keys.A:
+                        Input.SendKey(Keys.Home, isPress);
+                        break;
+
+                    default:
+                        Input.SendKey(CurrentKey, isPress);
+                        break;
+                }              
+                return;
             }
             else
             {
-                if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
-                {
-                    Input.PressKey((Keys)keyStruct.vkCode);
-                }
-
-                if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
-                {
-                    Input.ReleaseKey((Keys)keyStruct.vkCode);
-                }
+                Input.SendKey(CurrentKey, isPress);                
             }
 
             return;

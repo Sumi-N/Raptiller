@@ -51,6 +51,7 @@ namespace Raptiller
             lowLevelKeyBoardProcess = HookCallback;
             HookKeyBoard();
 
+            InputModifier.Initialize();
         }
 
         ~InputReceiver()
@@ -74,13 +75,20 @@ namespace Raptiller
 
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
+            KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));            
 
             if (nCode >= 0)
             {
                 if (keyStruct.flags != LLKHF_INJECTED)
-                {
-                    InputModifier.SendKey(wParam, lParam);
+                {                    
+                    if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
+                    {
+                        InputModifier.SendKey(keyStruct.vkCode, true);
+                    }
+                    else if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
+                    {
+                        InputModifier.SendKey(keyStruct.vkCode, false);
+                    }
                     return (System.IntPtr)1;
                 }
             }

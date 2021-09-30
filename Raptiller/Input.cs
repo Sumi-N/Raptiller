@@ -51,5 +51,14 @@ namespace Raptiller
             input.ki.wVk = (Int16)vk;
             SendInput(1, ref input, Marshal.SizeOf(input));
         }
+
+        public static void SendKey(Keys vk, bool isPress)
+        {
+            INPUT input = new INPUT();
+            input.type = INPUT_KEYBOARD;
+            input.ki.dwFlags = isPress ? 0 : KEYEVENTF_KEYUP;
+            input.ki.wVk = (Int16)vk;
+            SendInput(1, ref input, Marshal.SizeOf(input));
+        }
     }
 }
