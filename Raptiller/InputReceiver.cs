@@ -3,19 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Raptiller
-{ 
+{
+    public struct KBDLLHOOKSTRUCT
+    {
+        public Int32 vkCode;
+        public Int32 scanCode;
+        public Int32 flags;
+        public Int32 time;
+        IntPtr dwExtraInfo;
+    }
+
     class InputReceiver
     {
+        public  const int WM_KEYDOWN = 0x0100;
+        public const int WM_KEYUP = 0x0101;
+        public const int WM_SYSKEYDOWN = 0x0104;
+        public const int WM_SYSKEYUP = 0x0105;
+
         private const int WH_KEYBOARD_LL = 13;
-        private const int WM_KEYDOWN = 0x0100;
-        private const int WM_KEYUP = 0x0101;
-        private const int WM_SYSKEYDOWN = 0x0104;
-        private const int WM_SYSKEYUP = 0x0105;
         private const int LLKHF_INJECTED = 0x00000010;
 
         public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -44,6 +53,11 @@ namespace Raptiller
 
         }
 
+        ~InputReceiver()
+        {
+            UnHookKeyBoard();
+        }
+
         private void HookKeyBoard()
         {
             using (Process curProcess = Process.GetCurrentProcess())
@@ -58,33 +72,15 @@ namespace Raptiller
             UnhookWindowsHookEx(hookID);
         }
 
-        private struct KBDLLHOOKSTRUCT
-        {
-            public Int32 vkCode;
-            public Int32 scanCode;
-            public Int32 flags;
-            public Int32 time;
-            IntPtr dwExtraInfo;
-        }
-
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
 
-            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN)
+            if (nCode >= 0)
             {
-                if (keyStruct.flags == LLKHF_INJECTED)
+                if (keyStruct.flags != LLKHF_INJECTED)
                 {
-                    Input.PressKey((Keys)keyStruct.vkCode);
-                    return (System.IntPtr)1;
-                }
-            }
-
-            if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP)
-            {
-                if (keyStruct.flags == LLKHF_INJECTED)
-                {
-                    Input.ReleaseKey((Keys)keyStruct.vkCode);
+                    InputModifier.SendKey(wParam, lParam);
                     return (System.IntPtr)1;
                 }
             }
