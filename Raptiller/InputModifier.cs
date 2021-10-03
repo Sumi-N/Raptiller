@@ -61,10 +61,13 @@ namespace Raptiller
                         Input.SendKey(Keys.Home, sc, 1, isPress);
                         break;
 
+                    case Keys.CapsLock:
+                        return;                        
+
                     default:
-                        Input.SendKey(CurrentKey, sc, 1, isPress);
+                        Input.SendKey(CurrentKey, sc, 0, isPress);
                         break;
-                }              
+                }
                 return;
             }
             else

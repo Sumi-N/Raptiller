@@ -15,6 +15,7 @@ namespace Raptiller
         public static extern int SendInput(int cInputs, ref INPUT pInputs, int cbSize);
 
         public const int INPUT_KEYBOARD = 1;
+        public const int KEYEVENTF_EXTENDEDKEY = 0x0001;
         public const int KEYEVENTF_KEYUP = 0x0002;
 
         public struct KEYDBINPUT
@@ -45,32 +46,17 @@ namespace Raptiller
             SendInput(1, ref input, Marshal.SizeOf(input));
         }
 
-        public static void SendKeyArray(bool isPress, params Keys[] vks)
-        {
-            INPUT test = new INPUT();
-            INPUT[] inputs = new INPUT[vks.Length];
-            for (int i = 0; i < vks.Length; i++)
-            {
-                inputs[i].type = INPUT_KEYBOARD;
-                inputs[i].ki.dwFlags = isPress ? 0 : KEYEVENTF_KEYUP;
-                inputs[i].ki.wVk = (Int16)vks[i];
-            }
-            SendInput(vks.Length, ref inputs[0], Marshal.SizeOf(test));
-            //if (uSent != ARRAYSIZE(inputs))
-            //{
-            //    OutputString(L"SendInput failed: 0x%x\n", HRESULT_FROM_WIN32(GetLastError()));
-            //}
-        }
-
-        public static void Test()
-        {
-            //SendKey(Keys.LShiftKey, 0, true);
-            //SendKey(Keys.Left, 0, true);
-            ////SendKey(Keys.Left, true);
-            ////SendKey(Keys.Left, true);
-            ////SendKey(Keys.Left, true);
-            //SendKey(Keys.Left, 0, false);
-            //SendKey(Keys.LShiftKey, 0, false);
-        }
+        //public static void SendKeyArray(bool isPress, params Keys[] vks)
+        //{
+        //    INPUT size = new INPUT();
+        //    INPUT[] inputs = new INPUT[vks.Length];
+        //    for (int i = 0; i < vks.Length; i++)
+        //    {
+        //        inputs[i].type = INPUT_KEYBOARD;
+        //        inputs[i].ki.dwFlags = isPress ? 0 : KEYEVENTF_KEYUP;
+        //        inputs[i].ki.wVk = (Int16)vks[i];
+        //    }
+        //    SendInput(vks.Length, ref inputs[0], Marshal.SizeOf(size));
+        //}
     }
 }

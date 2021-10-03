@@ -19,19 +19,20 @@ namespace Raptiller
             public Int32 time;
             IntPtr dwExtraInfo;
         }
+        private const int WH_KEYBOARD_LL = 13;
+        private const int WH_SHELL = 10;
 
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101;
         private const int WM_SYSKEYDOWN = 0x0104;
         private const int WM_SYSKEYUP = 0x0105;
 
-        private const int WH_KEYBOARD_LL = 13;
         private const int LLKHF_INJECTED = 0x00000010;
 
-        public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+        public delegate IntPtr CallBackProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+        private static extern IntPtr SetWindowsHookEx(int idHook, CallBackProc lpfn, IntPtr hMod, uint dwThreadId);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -43,14 +44,19 @@ namespace Raptiller
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        private LowLevelKeyboardProc lowLevelKeyBoardProcess;
+        private CallBackProc lowLevelKeyBoardProcess;
+        private CallBackProc shellProcess;
 
-        private IntPtr hookID = IntPtr.Zero;
+        private IntPtr keyBoardHookID = IntPtr.Zero;
+        private IntPtr shellHookID = IntPtr.Zero;
 
         public InputReceiver()
         {
-            lowLevelKeyBoardProcess = HookCallback;
+            lowLevelKeyBoardProcess = HookKeyBoardCallback;
             HookKeyBoard();
+
+            shellProcess = HookShellCallback;
+            HookShell();
 
             InputModifier.Initialize();
         }
@@ -58,6 +64,7 @@ namespace Raptiller
         ~InputReceiver()
         {
             UnHookKeyBoard();
+            UnHookShell();
         }
 
         private void HookKeyBoard()
@@ -65,16 +72,37 @@ namespace Raptiller
             using (Process curProcess = Process.GetCurrentProcess())
             using (ProcessModule curModule = curProcess.MainModule)
             {
-                hookID = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyBoardProcess, GetModuleHandle(curModule.ModuleName), 0);
+                keyBoardHookID = SetWindowsHookEx(WH_KEYBOARD_LL, lowLevelKeyBoardProcess, GetModuleHandle(curModule.ModuleName), 0);
             }
         }
 
         private void UnHookKeyBoard()
         {
-            UnhookWindowsHookEx(hookID);
+            UnhookWindowsHookEx(keyBoardHookID);
         }
 
-        private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        private void HookShell()
+        {
+            using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule)
+            {
+                shellHookID = SetWindowsHookEx(WH_SHELL, shellProcess, GetModuleHandle(curModule.ModuleName), 0);
+            }
+
+            //if (shellHookID == IntPtr.Zero)
+            //{
+            //    // Get here error 1428 (ERROR_HOOK_NEEDS_HMOD) -
+            //    // "Cannot set nonlocal hook without a module handle."
+            //    throw new Exception(Marshal.GetLastWin32Error().ToString());
+            //}
+        }
+
+        private void UnHookShell()
+        {
+            UnhookWindowsHookEx(shellHookID);
+        }
+
+        private IntPtr HookKeyBoardCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
             KBDLLHOOKSTRUCT keyStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
 
@@ -103,7 +131,20 @@ namespace Raptiller
             {
                 Debug.WriteLine(((Keys)keyStruct.vkCode).ToString() + " is released");
             }
-            return CallNextHookEx(hookID, nCode, wParam, lParam);
+
+            InputMethodEditorChecker.Initialize();
+
+            return CallNextHookEx(keyBoardHookID, nCode, wParam, lParam);
+        }
+
+        private IntPtr HookShellCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            if(nCode == 8)
+            {
+                Debug.WriteLine("hello");
+            }
+
+            return CallNextHookEx(shellHookID, nCode, wParam, lParam);
         }
     }
 }
