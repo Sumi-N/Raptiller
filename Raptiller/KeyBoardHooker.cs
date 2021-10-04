@@ -9,6 +9,12 @@ using System.Runtime.InteropServices;
 
 namespace Raptiller
 {
+    public enum KeyBoardType
+    {
+        Japanese,
+        English,
+    }
+
     class KeyBoardHooker
     {
         private struct KBDLLHOOKSTRUCT
@@ -29,7 +35,7 @@ namespace Raptiller
 
         private const int LLKHF_INJECTED = 0x00000010;
 
-        public delegate IntPtr CallBackProc(int nCode, IntPtr wParam, IntPtr lParam);
+        private delegate IntPtr CallBackProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr SetWindowsHookEx(int idHook, CallBackProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -76,6 +82,7 @@ namespace Raptiller
         }
 
         private static Input.KeyInfo ReceivedInfo = new Input.KeyInfo();
+        private static KeyBoardType keyBoardType;
 
         private IntPtr HookKeyBoardCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
@@ -91,9 +98,9 @@ namespace Raptiller
                     ReceivedInfo.isModified = false;
                     ReceivedInfo.flags = keyStruct.flags;
 
-                    Input.Modify(ref ReceivedInfo);
+                    IMEChecker.ModifyJapaneseIME(ref keyBoardType);
 
-                    //IMEChecker.ModifyJapaneseIME(keyStruct.vkCode, keyStruct.scanCode);
+                    Input.Modify(keyBoardType, ref ReceivedInfo);
 
                     if (ReceivedInfo.isModified)
                     {

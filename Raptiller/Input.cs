@@ -12,11 +12,14 @@ namespace Raptiller
     public class Input
     {
         [DllImport("user32")]
-        public static extern int SendInput(int cInputs, ref INPUT pInputs, int cbSize);
+        private static extern int SendInput(int cInputs, ref INPUT pInputs, int cbSize);
 
-        public const int INPUT_KEYBOARD = 1;
-        public const int KEYEVENTF_EXTENDEDKEY = 0x0001;
-        public const int KEYEVENTF_KEYUP = 0x0002;
+        [DllImport("user32.dll")]
+        private static extern void keybd_event(Byte bVk, Byte bScan, Int32 dwFlags, IntPtr dwExtraInfo);
+
+        private const int INPUT_KEYBOARD = 1;
+        private const int KEYEVENTF_EXTENDEDKEY = 0x0001;
+        private const int KEYEVENTF_KEYUP = 0x0002;
 
         public struct KeyInfo
         {
@@ -27,7 +30,7 @@ namespace Raptiller
             public int  flags;
         }
 
-        public struct KEYDBINPUT
+        private struct KEYDBINPUT
         {
             public Int16 wVk;
             public Int16 wScan;
@@ -38,7 +41,7 @@ namespace Raptiller
             public Int32 __filler2;
         }
 
-        public struct INPUT
+        private struct INPUT
         {
             public Int32 type;
             public KEYDBINPUT ki;
@@ -54,9 +57,17 @@ namespace Raptiller
             }
         }
 
-        public static void Modify(ref KeyInfo info)
+        public static void Modify(KeyBoardType type, ref KeyInfo info)
         {            
             InputStates[info.virtualKey] = info.isPressed;
+
+            if(type == KeyBoardType.Japanese)
+            {
+                if (InputStates[Keys.LShiftKey])
+                {
+                    keybd_event((Byte)Keys.LShiftKey, (Byte)0, (Int32)0x02, (IntPtr)0);
+                }
+            }
 
             if (InputStates[Keys.CapsLock])
             {
