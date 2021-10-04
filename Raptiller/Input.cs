@@ -18,6 +18,15 @@ namespace Raptiller
         public const int KEYEVENTF_EXTENDEDKEY = 0x0001;
         public const int KEYEVENTF_KEYUP = 0x0002;
 
+        public struct KeyInfo
+        {
+            public Keys virtualKey;
+            public int  scanCode;
+            public bool isPressed;
+            public bool isModified;
+            public int  flags;
+        }
+
         public struct KEYDBINPUT
         {
             public Int16 wVk;
@@ -35,28 +44,87 @@ namespace Raptiller
             public KEYDBINPUT ki;
         }
 
-        public static void SendKey(Keys vk, int sc, int flags, bool isPress)
+        private static Dictionary<Keys, bool> InputStates = new Dictionary<Keys, bool>();
+
+        public static void Initialize()
         {
-            INPUT input = new INPUT();
-            input.type = INPUT_KEYBOARD;
-            input.ki.dwFlags = isPress ? 0 : KEYEVENTF_KEYUP;
-            input.ki.dwFlags = (input.ki.dwFlags | flags);
-            input.ki.wVk = (Int16)vk;
-            input.ki.wScan = (Int16)sc;
-            SendInput(1, ref input, Marshal.SizeOf(input));
+            for (int i = 0; i < 256; i++)
+            {
+                InputStates.Add((Keys)i, false);
+            }
         }
 
-        //public static void SendKeyArray(bool isPress, params Keys[] vks)
-        //{
-        //    INPUT size = new INPUT();
-        //    INPUT[] inputs = new INPUT[vks.Length];
-        //    for (int i = 0; i < vks.Length; i++)
-        //    {
-        //        inputs[i].type = INPUT_KEYBOARD;
-        //        inputs[i].ki.dwFlags = isPress ? 0 : KEYEVENTF_KEYUP;
-        //        inputs[i].ki.wVk = (Int16)vks[i];
-        //    }
-        //    SendInput(vks.Length, ref inputs[0], Marshal.SizeOf(size));
-        //}
+        public static void Modify(ref KeyInfo info)
+        {            
+            InputStates[info.virtualKey] = info.isPressed;
+
+            if (InputStates[Keys.CapsLock])
+            {
+                switch (info.virtualKey)
+                {
+                    case Keys.B:
+                        info.virtualKey = Keys.Left;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.F:
+                        info.virtualKey = Keys.Right;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.P:                        
+                        info.virtualKey = Keys.Up;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.N:                        
+                        info.virtualKey = Keys.Down;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.D:                        
+                        info.virtualKey = Keys.Delete;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.H:                        
+                        info.virtualKey = Keys.Back;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.E:                        
+                        info.virtualKey = Keys.End;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.A:                        
+                        info.virtualKey = Keys.Home;
+                        info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        break;
+
+                    case Keys.CapsLock:
+                        return;
+
+                    default:
+                        info.flags |= 0x00;
+                        break;
+                }
+                info.isModified = true;
+            }
+
+            return;
+        }
+
+        private static INPUT SeindingInput = new INPUT();
+
+        public static void SendKey(KeyInfo info)
+        {            
+            SeindingInput.type = INPUT_KEYBOARD;
+            SeindingInput.ki.dwFlags = info.isPressed ? 0 : KEYEVENTF_KEYUP;
+            SeindingInput.ki.dwFlags |= info.flags;
+            SeindingInput.ki.wVk = (Int16)info.virtualKey;
+            SeindingInput.ki.wScan = (Int16)info.scanCode;
+            SendInput(1, ref SeindingInput, Marshal.SizeOf(SeindingInput));
+        }
     }
 }

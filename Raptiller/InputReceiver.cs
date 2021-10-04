@@ -44,27 +44,21 @@ namespace Raptiller
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        private CallBackProc lowLevelKeyBoardProcess;
-        private CallBackProc shellProcess;
+        private CallBackProc lowLevelKeyBoardProcess;        
 
-        private IntPtr keyBoardHookID = IntPtr.Zero;
-        private IntPtr shellHookID = IntPtr.Zero;
+        private IntPtr keyBoardHookID = IntPtr.Zero;        
 
         public InputReceiver()
         {
             lowLevelKeyBoardProcess = HookKeyBoardCallback;
             HookKeyBoard();
 
-            shellProcess = HookShellCallback;
-            HookShell();
-
-            InputModifier.Initialize();
+            Input.Initialize();
         }
 
         ~InputReceiver()
         {
-            UnHookKeyBoard();
-            UnHookShell();
+            UnHookKeyBoard();            
         }
 
         private void HookKeyBoard()
@@ -81,26 +75,7 @@ namespace Raptiller
             UnhookWindowsHookEx(keyBoardHookID);
         }
 
-        private void HookShell()
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                shellHookID = SetWindowsHookEx(WH_SHELL, shellProcess, GetModuleHandle(curModule.ModuleName), 0);
-            }
-
-            //if (shellHookID == IntPtr.Zero)
-            //{
-            //    // Get here error 1428 (ERROR_HOOK_NEEDS_HMOD) -
-            //    // "Cannot set nonlocal hook without a module handle."
-            //    throw new Exception(Marshal.GetLastWin32Error().ToString());
-            //}
-        }
-
-        private void UnHookShell()
-        {
-            UnhookWindowsHookEx(shellHookID);
-        }
+        private static Input.KeyInfo ReceivedInfo = new Input.KeyInfo();
 
         private IntPtr HookKeyBoardCallback(int nCode, IntPtr wParam, IntPtr lParam)
         {
@@ -110,16 +85,19 @@ namespace Raptiller
             {
                 if ((keyStruct.flags & LLKHF_INJECTED) == 0)
                 {
-                    if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
-                    {
-                        InputModifier.SendKey(keyStruct.vkCode, keyStruct.scanCode, keyStruct.flags, true);
-                    }
+                    ReceivedInfo.virtualKey = (Keys)keyStruct.vkCode;
+                    ReceivedInfo.scanCode = keyStruct.vkCode;
+                    ReceivedInfo.isPressed = wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN ? true : false;
+                    ReceivedInfo.isModified = false;
+                    ReceivedInfo.flags = keyStruct.flags;
 
-                    if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
+                    Input.Modify(ref ReceivedInfo);
+
+                    if (ReceivedInfo.isModified)
                     {
-                        InputModifier.SendKey(keyStruct.vkCode, keyStruct.scanCode, keyStruct.flags, false);
+                        Input.SendKey(ReceivedInfo);
+                        return (System.IntPtr)1;
                     }
-                    return (System.IntPtr)1;
                 }
             }
 
@@ -135,16 +113,6 @@ namespace Raptiller
             InputMethodEditorChecker.Initialize();
 
             return CallNextHookEx(keyBoardHookID, nCode, wParam, lParam);
-        }
-
-        private IntPtr HookShellCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if(nCode == 8)
-            {
-                Debug.WriteLine("hello");
-            }
-
-            return CallNextHookEx(shellHookID, nCode, wParam, lParam);
         }
     }
 }

@@ -54,6 +54,9 @@ namespace Raptiller
         [DllImport("user32.dll")]
         static extern bool GetGUIThreadInfo(Int32 idThread, IntPtr pgui);
 
+        [DllImport("user32.dll")]
+        static extern void keybd_event(Byte bVk, Byte bScan, Int32 dwFlags, IntPtr dwExtraInfo);
+
         [DllImport("Kernel32.dll", CharSet = CharSet.Auto)]
         static extern System.Boolean GetThreadPreferredUILanguages(
 
@@ -89,6 +92,8 @@ namespace Raptiller
             {
                 IntPtr imeWindow = ImmGetDefaultIMEWnd(foregroundWindow);
                 SendMessage(imeWindow, WM_IME_CONTROL, (IntPtr)IMC_SETOPENSTATUS, (IntPtr)1);
+
+                //keybd_event()
             }
             else
             {
