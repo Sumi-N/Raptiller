@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace Raptiller
 {
-    class InputReceiver
+    class KeyBoardHooker
     {
         private struct KBDLLHOOKSTRUCT
         {
@@ -48,7 +48,7 @@ namespace Raptiller
 
         private IntPtr keyBoardHookID = IntPtr.Zero;        
 
-        public InputReceiver()
+        public KeyBoardHooker()
         {
             lowLevelKeyBoardProcess = HookKeyBoardCallback;
             HookKeyBoard();
@@ -56,7 +56,7 @@ namespace Raptiller
             Input.Initialize();
         }
 
-        ~InputReceiver()
+        ~KeyBoardHooker()
         {
             UnHookKeyBoard();            
         }
@@ -87,11 +87,13 @@ namespace Raptiller
                 {
                     ReceivedInfo.virtualKey = (Keys)keyStruct.vkCode;
                     ReceivedInfo.scanCode = keyStruct.vkCode;
-                    ReceivedInfo.isPressed = wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN ? true : false;
+                    ReceivedInfo.isPressed = wParam == (IntPtr)KeyBoardHooker.WM_KEYDOWN || wParam == (IntPtr)KeyBoardHooker.WM_SYSKEYDOWN ? true : false;
                     ReceivedInfo.isModified = false;
                     ReceivedInfo.flags = keyStruct.flags;
 
                     Input.Modify(ref ReceivedInfo);
+
+                    //IMEChecker.ModifyJapaneseIME(keyStruct.vkCode, keyStruct.scanCode);
 
                     if (ReceivedInfo.isModified)
                     {
@@ -101,16 +103,14 @@ namespace Raptiller
                 }
             }
 
-            if (wParam == (IntPtr)InputReceiver.WM_KEYDOWN || wParam == (IntPtr)InputReceiver.WM_SYSKEYDOWN)
+            if (wParam == (IntPtr)KeyBoardHooker.WM_KEYDOWN || wParam == (IntPtr)KeyBoardHooker.WM_SYSKEYDOWN)
             {
                 Debug.WriteLine(((Keys)keyStruct.vkCode).ToString() + " is pressed");
             }
-            else if (wParam == (IntPtr)InputReceiver.WM_KEYUP || wParam == (IntPtr)InputReceiver.WM_SYSKEYUP)
+            else if (wParam == (IntPtr)KeyBoardHooker.WM_KEYUP || wParam == (IntPtr)KeyBoardHooker.WM_SYSKEYUP)
             {
                 Debug.WriteLine(((Keys)keyStruct.vkCode).ToString() + " is released");
             }
-
-            InputMethodEditorChecker.Initialize();
 
             return CallNextHookEx(keyBoardHookID, nCode, wParam, lParam);
         }

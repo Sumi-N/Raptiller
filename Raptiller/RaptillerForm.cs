@@ -17,7 +17,7 @@ namespace Raptiller
 {
     public partial class RaptillerForm : Form
     {
-        private InputReceiver inputReceiver;
+        private KeyBoardHooker keyBoardHooker;
 
         public RaptillerForm()
         {
@@ -42,7 +42,7 @@ namespace Raptiller
 
             this.Activated += new EventHandler(Form_Activated);
 
-            inputReceiver = new InputReceiver();
+            keyBoardHooker = new KeyBoardHooker();
         }
 
         private void Exit_Click(object sender, EventArgs e)

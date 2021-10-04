@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace Raptiller
 {
-    class InputMethodEditorChecker
+    class IMEChecker
     {
         public struct HKL
         {
@@ -38,6 +38,9 @@ namespace Raptiller
         private const int WM_IME_CONTROL = 0x0283;
         private const int IMC_GETOPENSTATUS = 0x0005;
         private const int IMC_SETOPENSTATUS = 0x0006;
+
+        private const int KEYBOARD_JAPANESE = 1041;
+        private const int KEYBOARD_ENGLISH = 1033;
 
         [DllImport("user32")]
         public static extern HKL GetKeyboardLayout(Int32 idThread);
@@ -76,28 +79,32 @@ namespace Raptiller
         [DllImport("user32.dll")]
         static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
 
-        public static void Initialize()
+        public static void ModifyJapaneseIME(int vk, int sc)
         {
             IntPtr foregroundWindow = GetForegroundWindow();
             Int32 foregroundProcess = GetWindowThreadProcessId(foregroundWindow, IntPtr.Zero);
             HKL KeyboardLayout = GetKeyboardLayout(foregroundProcess);
 
             // If current IME is English
-            if (KeyboardLayout.languageIdentifiers == 1033)
+            if (KeyboardLayout.languageIdentifiers == KEYBOARD_ENGLISH)
             {
-
+                return;
             }
             // If current IME is Japanese
-            else if (KeyboardLayout.languageIdentifiers == 1041)
+            else if (KeyboardLayout.languageIdentifiers == KEYBOARD_JAPANESE)
             {
                 IntPtr imeWindow = ImmGetDefaultIMEWnd(foregroundWindow);
                 SendMessage(imeWindow, WM_IME_CONTROL, (IntPtr)IMC_SETOPENSTATUS, (IntPtr)1);
 
-                //keybd_event()
+                //if (vk == 160)
+                //{
+                //    keybd_event((Byte)vk, (Byte)sc, (Int32)0x02, (IntPtr)0xFFC3D450);
+                //}
+                keybd_event((Byte)vk, (Byte)sc, (Int32)0x02, (IntPtr)0);
             }
             else
             {
-
+                return;
             }
 
             //uint MUI_MERGE_USER_FALLBACK = 0x20;

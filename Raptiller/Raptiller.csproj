@@ -51,9 +51,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="InputMethodEditorChecker.cs" />
-    <Compile Include="InputReceiver.cs" />
-    <Compile Include="InputModifier.cs" />
+    <Compile Include="IMEChecker.cs" />
+    <Compile Include="KeyBoardHooker.cs" />
     <Compile Include="RaptillerForm.cs">
       <SubType>Form</SubType>
     </Compile>
