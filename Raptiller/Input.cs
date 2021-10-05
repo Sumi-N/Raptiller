@@ -11,7 +11,7 @@ namespace Raptiller
 {
     public class Input
     {
-        [DllImport("user32")]
+        [DllImport("user32.dll")]
         private static extern int SendInput(int cInputs, ref INPUT pInputs, int cbSize);
 
         [DllImport("user32.dll")]
@@ -27,6 +27,7 @@ namespace Raptiller
             public int  scanCode;
             public bool isPressed;
             public bool isModified;
+            public bool shouldSend;
             public int  flags;
         }
 
@@ -63,9 +64,14 @@ namespace Raptiller
 
             if(type == KeyBoardType.Japanese)
             {
-                if (InputStates[Keys.LShiftKey])
+                // When Shift + Caps is pressed in Japanese Keyboard, the system will automatically translate the key input to 
+                // the virtual keycode equals to System.Windows.Forms.Keys.D0 | System.Windows.Forms.Keys.Oem3, which is equivalent to 240 in Integer.
+                // The statement below prevent that to be happened and translate it to work as same as the English KeyBoard.
+                if (info.virtualKey == (Keys)240)
                 {
-                    keybd_event((Byte)Keys.LShiftKey, (Byte)0, (Int32)0x02, (IntPtr)0);
+                    InputStates[Keys.CapsLock] = true;
+                    info.isModified = true;
+                    info.shouldSend = false;
                 }
             }
 
@@ -76,51 +82,61 @@ namespace Raptiller
                     case Keys.B:
                         info.virtualKey = Keys.Left;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.F:
                         info.virtualKey = Keys.Right;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.P:                        
                         info.virtualKey = Keys.Up;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.N:                        
                         info.virtualKey = Keys.Down;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.D:                        
                         info.virtualKey = Keys.Delete;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.H:                        
                         info.virtualKey = Keys.Back;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.E:                        
                         info.virtualKey = Keys.End;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.A:                        
                         info.virtualKey = Keys.Home;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
+                        info.isModified = true;
                         break;
 
                     case Keys.CapsLock:
+                        info.isModified = true;
+                        info.shouldSend = false;
                         return;
 
                     default:
                         info.flags |= 0x00;
+                        info.isModified = true;
                         break;
                 }
-                info.isModified = true;
             }
 
             return;

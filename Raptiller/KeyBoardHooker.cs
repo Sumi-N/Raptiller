@@ -96,6 +96,7 @@ namespace Raptiller
                     ReceivedInfo.scanCode = keyStruct.vkCode;
                     ReceivedInfo.isPressed = wParam == (IntPtr)KeyBoardHooker.WM_KEYDOWN || wParam == (IntPtr)KeyBoardHooker.WM_SYSKEYDOWN ? true : false;
                     ReceivedInfo.isModified = false;
+                    ReceivedInfo.shouldSend = true;
                     ReceivedInfo.flags = keyStruct.flags;
 
                     IMEChecker.ModifyJapaneseIME(ref keyBoardType);
@@ -104,7 +105,10 @@ namespace Raptiller
 
                     if (ReceivedInfo.isModified)
                     {
-                        Input.SendKey(ReceivedInfo);
+                        if (ReceivedInfo.shouldSend)
+                        {
+                            Input.SendKey(ReceivedInfo);
+                        }
                         return (System.IntPtr)1;
                     }
                 }

@@ -27,7 +27,7 @@ namespace Raptiller
         [DllImport("user32.dll")]
         private static extern Int32 GetWindowThreadProcessId(IntPtr hwnd, IntPtr proccess);
 
-        [DllImport("user32")]
+        [DllImport("user32.dll")]
         private static extern HKL GetKeyboardLayout(Int32 idThread);
 
         [DllImport("Imm32.dll")]
@@ -45,7 +45,6 @@ namespace Raptiller
             if (KeyboardLayout.languageIdentifiers == KEYBOARD_ENGLISH)
             {
                 type = KeyBoardType.English;
-                return;
             }
             else if (KeyboardLayout.languageIdentifiers == KEYBOARD_JAPANESE)
             {
@@ -54,6 +53,8 @@ namespace Raptiller
                 IntPtr imeWindow = ImmGetDefaultIMEWnd(foregroundWindow);
                 SendMessage(imeWindow, WM_IME_CONTROL, (IntPtr)IMC_SETOPENSTATUS, (IntPtr)1);
             }
+
+            return;
         }
     }
 }
