@@ -11,7 +11,9 @@ namespace Raptiller
 {
     public enum KeyBoardType
     {
-        Japanese,
+        None = 0,
+        Japanese_AlphabetNumeric,
+        Japanese_Hiragana,
         English,
     }
 
@@ -50,21 +52,21 @@ namespace Raptiller
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        private CallBackProc lowLevelKeyBoardProcess;        
+        private CallBackProc lowLevelKeyBoardProcess;
 
-        private IntPtr keyBoardHookID = IntPtr.Zero;        
+        private IntPtr keyBoardHookID = IntPtr.Zero;
 
         public KeyBoardHooker()
         {
             lowLevelKeyBoardProcess = HookKeyBoardCallback;
             HookKeyBoard();
 
-            Input.Initialize();
+            InputModifier.Initialize();
         }
 
         ~KeyBoardHooker()
         {
-            UnHookKeyBoard();            
+            UnHookKeyBoard();
         }
 
         private void HookKeyBoard()
@@ -81,7 +83,6 @@ namespace Raptiller
             UnhookWindowsHookEx(keyBoardHookID);
         }
 
-        private static Input.KeyInfo ReceivedInfo = new Input.KeyInfo();
         private static KeyBoardType keyBoardType;
 
         private IntPtr HookKeyBoardCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -92,6 +93,7 @@ namespace Raptiller
             {
                 if ((keyStruct.flags & LLKHF_INJECTED) == 0)
                 {
+                    InputModifier.KeyInfo ReceivedInfo = new InputModifier.KeyInfo();
                     ReceivedInfo.virtualKey = (Keys)keyStruct.vkCode;
                     ReceivedInfo.scanCode = keyStruct.vkCode;
                     ReceivedInfo.isPressed = wParam == (IntPtr)KeyBoardHooker.WM_KEYDOWN || wParam == (IntPtr)KeyBoardHooker.WM_SYSKEYDOWN ? true : false;
@@ -99,16 +101,13 @@ namespace Raptiller
                     ReceivedInfo.shouldSend = true;
                     ReceivedInfo.flags = keyStruct.flags;
 
-                    IMEChecker.ModifyJapaneseIME(ref keyBoardType);
+                    KeyboardLayoutModifier.Exec(ref keyBoardType);
 
-                    Input.Modify(keyBoardType, ref ReceivedInfo);
+                    bool isInputModified = false;
+                    InputModifier.Exec(keyBoardType, ref ReceivedInfo, ref isInputModified);
 
-                    if (ReceivedInfo.isModified)
+                    if (isInputModified)
                     {
-                        if (ReceivedInfo.shouldSend)
-                        {
-                            Input.SendKey(ReceivedInfo);
-                        }
                         return (System.IntPtr)1;
                     }
                 }

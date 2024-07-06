@@ -9,13 +9,10 @@ using System.Runtime.InteropServices;
 
 namespace Raptiller
 {
-    public class Input
+    public class InputModifier
     {
         [DllImport("user32.dll")]
         private static extern int SendInput(int cInputs, ref INPUT pInputs, int cbSize);
-
-        [DllImport("user32.dll")]
-        private static extern void keybd_event(Byte bVk, Byte bScan, Int32 dwFlags, IntPtr dwExtraInfo);
 
         private const int INPUT_KEYBOARD = 1;
         private const int KEYEVENTF_EXTENDEDKEY = 0x0001;
@@ -58,18 +55,19 @@ namespace Raptiller
             }
         }
 
-        public static void Modify(KeyBoardType type, ref KeyInfo info)
-        {            
+        public static void Exec(KeyBoardType type, ref KeyInfo info, ref bool isModified)
+        {
+            isModified = false;
             InputStates[info.virtualKey] = info.isPressed;
 
-            if(type == KeyBoardType.Japanese)
+            if (type == KeyBoardType.Japanese_Hiragana || type == KeyBoardType.Japanese_AlphabetNumeric)
             {
-                // When Shift + Caps is pressed in Japanese Keyboard, the system will automatically translate the key input to 
-                // the virtual keycode equals to System.Windows.Forms.Keys.D0 | System.Windows.Forms.Keys.Oem3, which is equivalent to 240 in Integer.
-                // The statement below prevent that to be happened and translate it to work as same as the English KeyBoard.
-                if (info.virtualKey == (Keys)240)
+                // When Shift + Caps is pressed in Japanese Keyboard, the system will automatically translate the key input to
+                // (System.Windows.Forms.Keys.D0 | System.Windows.Forms.Keys.Oem3) or (System.Windows.Forms.Keys.ShiftKey | System.Windows.Forms.Keys.Oem102) (depends on Windows OS)
+                // The code below translate those key inputs to work as same logic as English keyboard layout.
+                if (info.virtualKey == (System.Windows.Forms.Keys.D0 | System.Windows.Forms.Keys.Oem3) || info.virtualKey == (System.Windows.Forms.Keys.ShiftKey | System.Windows.Forms.Keys.Oem102))
                 {
-                    InputStates[Keys.CapsLock] = true;
+                    InputStates[Keys.CapsLock] = info.isPressed;
                     info.isModified = true;
                     info.shouldSend = false;
                 }
@@ -91,37 +89,37 @@ namespace Raptiller
                         info.isModified = true;
                         break;
 
-                    case Keys.P:                        
+                    case Keys.P:
                         info.virtualKey = Keys.Up;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
                         break;
 
-                    case Keys.N:                        
+                    case Keys.N:
                         info.virtualKey = Keys.Down;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
                         break;
 
-                    case Keys.D:                        
+                    case Keys.D:
                         info.virtualKey = Keys.Delete;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
                         break;
 
-                    case Keys.H:                        
+                    case Keys.H:
                         info.virtualKey = Keys.Back;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
                         break;
 
-                    case Keys.E:                        
+                    case Keys.E:
                         info.virtualKey = Keys.End;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
                         break;
 
-                    case Keys.A:                        
+                    case Keys.A:
                         info.virtualKey = Keys.Home;
                         info.flags |= KEYEVENTF_EXTENDEDKEY;
                         info.isModified = true;
@@ -130,7 +128,7 @@ namespace Raptiller
                     case Keys.CapsLock:
                         info.isModified = true;
                         info.shouldSend = false;
-                        return;
+                        break;
 
                     default:
                         info.flags |= 0x00;
@@ -139,18 +137,26 @@ namespace Raptiller
                 }
             }
 
-            return;
+            if (info.isModified)
+            {
+                isModified = true;
+
+                if (info.shouldSend)
+                {
+                    InputModifier.SendKey(info);
+                }
+            }
         }
 
-        private static INPUT SeindingInput = new INPUT();
-
         public static void SendKey(KeyInfo info)
-        {            
+        {
+            INPUT SeindingInput = new INPUT();
             SeindingInput.type = INPUT_KEYBOARD;
             SeindingInput.ki.dwFlags = info.isPressed ? 0 : KEYEVENTF_KEYUP;
             SeindingInput.ki.dwFlags |= info.flags;
             SeindingInput.ki.wVk = (Int16)info.virtualKey;
             SeindingInput.ki.wScan = (Int16)info.scanCode;
+
             SendInput(1, ref SeindingInput, Marshal.SizeOf(SeindingInput));
         }
     }
