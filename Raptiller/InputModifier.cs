@@ -125,6 +125,11 @@ namespace Raptiller
                         info.isModified = true;
                         break;
 
+                    case Keys.Q:
+                        info.virtualKey = Keys.D0 | Keys.Oem3;
+                        info.isModified = true;
+                        break;
+
                     case Keys.CapsLock:
                         info.isModified = true;
                         info.shouldSend = false;
